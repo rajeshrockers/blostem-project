@@ -1,9 +1,7 @@
 import { create } from 'zustand';
+import type { CartItem } from '../types';
 
-export interface CartItem {
-  id: number;
-  quantity: number;
-}
+export type { CartItem } from '../types';
 
 function getCartKey(userId: number | null): string {
   return userId ? `cart_user_${userId}` : 'cart';

@@ -6,20 +6,7 @@ import { ENDPOINTS } from '../../constants/endponint';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
-
-interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  discountPercentage: number;
-  rating: number;
-  stock: number;
-  brand: string;
-  category: string;
-  thumbnail: string;
-  images: string[];
-}
+import type { ProductDetail } from '../../types';
 
 const HeartIcon = memo(function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -43,7 +30,7 @@ const HeartIcon = memo(function HeartIcon({ filled }: { filled: boolean }) {
 // Displays full info for a single product.
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeImage, setActiveImage] = useState('');
@@ -56,7 +43,7 @@ export default function ProductDetailPage() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await axiosInstance.get<Product>(ENDPOINTS.PRODUCTS.DETAIL(id ?? ''));
+      const { data } = await axiosInstance.get<ProductDetail>(ENDPOINTS.PRODUCTS.DETAIL(id ?? ''));
       setProduct(data);
       setActiveImage(data.thumbnail);
     } catch {

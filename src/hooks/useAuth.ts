@@ -2,16 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { axiosInstance } from '../api/axiosInstance';
 import { ENDPOINTS } from '../constants/endponint';
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  image: string;
-}
+import type { User } from '../types';
 
 // Validates the stored token by calling /auth/me.
 // Returns auth state, user data, and a loading flag.

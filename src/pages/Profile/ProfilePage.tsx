@@ -5,16 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { axiosInstance } from '../../api/axiosInstance';
 import { ENDPOINTS } from '../../constants/endponint';
 import SkeletonProfile from '../../components/ui/SkeletonProfile';
-
-interface UserProfile {
-  id: number;
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  image: string;
-}
+import type { UserProfile } from '../../types';
 
 // Fetches the current user's profile from /auth/me and shows a logout button.
 export default function ProfilePage() {

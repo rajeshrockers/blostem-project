@@ -4,15 +4,7 @@ import { toast } from 'sonner';
 import { axiosInstance } from '../../api/axiosInstance';
 import { ENDPOINTS } from '../../constants/endponint';
 import { useCart } from '../../hooks/useCart';
-
-interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  thumbnail: string;
-  category: string;
-}
+import type { Product } from '../../types';
 
 export default function CartPage() {
   const { items, updateQuantity, remove, totalItems } = useCart();

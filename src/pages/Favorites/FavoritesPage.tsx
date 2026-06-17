@@ -5,15 +5,7 @@ import { axiosInstance } from '../../api/axiosInstance';
 import { ENDPOINTS } from '../../constants/endponint';
 import { useFavorites } from '../../hooks/useFavorites';
 import SkeletonCard from '../../components/ui/SkeletonCard';
-
-interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  thumbnail: string;
-  category: string;
-}
+import type { Product } from '../../types';
 
 // Displays products the user has favorited (stored in localStorage, scoped by user).
 export default function FavoritesPage() {

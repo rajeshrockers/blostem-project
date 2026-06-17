@@ -7,18 +7,7 @@ import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axiosInstance';
 import { useAuthStore } from '../../store/authStore';
 import { ENDPOINTS } from '../../constants/endponint';
-
-interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  id: number;
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  image: string;
-}
+import type { LoginResponse } from '../../types';
 
 // Zod schema for login form validation.
 const loginSchema = z.object({

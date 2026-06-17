@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef, memo } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import InfiniteScroll from 'react-infinite-scroll-component';
 import { axiosInstance } from '../../api/axiosInstance';
 import { ENDPOINTS } from '../../constants/endponint';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -9,28 +10,7 @@ import SkeletonCard from '../../components/ui/SkeletonCard';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
-
-interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  thumbnail: string;
-  category: string;
-}
-
-interface ProductsResponse {
-  products: Product[];
-  total: number;
-  skip: number;
-  limit: number;
-}
-
-interface CategoryItem {
-  slug: string;
-  name: string;
-  url: string;
-}
+import type { CategoryItem, Product, ProductsResponse } from '../../types';
 
 const LIMIT = 20;
 
@@ -59,8 +39,11 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const { toggle, isFavorite } = useFavorites();
   const { add, remove, isInCart } = useCart();
   const { isAuthenticated } = useAuth();
@@ -74,8 +57,7 @@ export default function ProductsPage() {
   const debouncedSearch = useDebounce(searchInput, 400);
 
   const category = searchParams.get('category') || '';
-  const pageParam = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-  const skip = (pageParam - 1) * LIMIT;
+  const skip = (page - 1) * LIMIT;
 
   // Fetch categories once on mount.
   useEffect(() => {
@@ -90,8 +72,12 @@ export default function ProductsPage() {
     fetchCategories();
   }, []);
 
-  const fetchProducts = async (signal?: AbortSignal) => {
-    setLoading(true);
+  const fetchProducts = async (signal?: AbortSignal, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setError('');
     try {
       let url: string;
@@ -104,14 +90,22 @@ export default function ProductsPage() {
       }
       const { data } = await axiosInstance.get<ProductsResponse>(url, { signal });
       if (signal?.aborted) return; // race: newer request already started
-      setProducts(data.products);
+      let updatedCount = 0;
+      setProducts((prev) => {
+        const nextProducts = append ? [...prev, ...data.products] : data.products;
+        updatedCount = nextProducts.length;
+        return nextProducts;
+      });
       setTotal(data.total);
+      setHasMore(updatedCount < data.total);
       setLoading(false);
+      setLoadingMore(false);
     } catch (err) {
       if (axios.isCancel(err)) return; // silently ignore cancelled requests
       if (signal?.aborted) return;
       setError('Failed to load products');
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -124,7 +118,7 @@ export default function ProductsPage() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    fetchProducts(controller.signal);
+    fetchProducts(controller.signal, page > 1);
 
     return () => {
       controller.abort();
@@ -132,15 +126,11 @@ export default function ProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, category, skip]);
 
-  const totalPages = Math.ceil(total / LIMIT) || 1;
-  const currentPage = Math.floor(skip / LIMIT) + 1;
-
   const buildParams = useCallback(
-    (q: string, cat: string, page: number): URLSearchParams => {
+    (q: string, cat: string): URLSearchParams => {
       const params = new URLSearchParams();
       if (q) params.set('q', q);
       if (cat) params.set('category', cat);
-      if (page > 1) params.set('page', String(page));
       return params;
     },
     []
@@ -160,18 +150,22 @@ export default function ProductsPage() {
   useEffect(() => {
     const currentQ = searchParams.get('q') || '';
     if (debouncedSearch !== currentQ) {
-      setSearchParams(buildParams(debouncedSearch, category, 1), { replace: true });
+      setSearchParams(buildParams(debouncedSearch, category), { replace: true });
+      setPage(1);
+      setProducts([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
   const handleCategoryChange = (value: string) => {
-    setSearchParams(buildParams(debouncedSearch, value, 1), { replace: true });
+    setSearchParams(buildParams(debouncedSearch, value), { replace: true });
+    setPage(1);
+    setProducts([]);
   };
 
-  const goToPage = (newSkip: number) => {
-    const newPage = Math.floor(newSkip / LIMIT) + 1;
-    setSearchParams(buildParams(debouncedSearch, category, newPage), { replace: true });
+  const loadMore = () => {
+    if (loadingMore || loading) return;
+    setPage((prev) => prev + 1);
   };
 
   return (
@@ -201,7 +195,7 @@ export default function ProductsPage() {
         </select>
       </div>
 
-      {loading ? (
+      {loading && products.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
           {Array.from({ length: LIMIT }).map((_, i) => (
             <SkeletonCard key={i} />
@@ -214,7 +208,23 @@ export default function ProductsPage() {
       ) : products.length === 0 ? (
         <div className="text-center py-20 text-gray-600 dark:text-gray-300">No products found.</div>
       ) : (
-        <>
+        <InfiniteScroll
+          dataLength={products.length}
+          next={loadMore}
+          hasMore={hasMore}
+          loader={
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <SkeletonCard key={`loading-${i}`} />
+              ))}
+            </div>
+          }
+          endMessage={
+            <div className="text-center py-6 text-sm text-gray-500 dark:text-gray-400">
+              You have reached the end ({total} products)
+            </div>
+          }
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
             {products.map((product) => {
               const isFav = isFavorite(product.id);
@@ -286,30 +296,7 @@ export default function ProductsPage() {
               );
             })}
           </div>
-
-          {/* Pagination */}
-          <div className="flex flex-col items-center gap-3">
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              Page {currentPage} of {totalPages} ({total} records)
-            </span>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => goToPage(Math.max(0, skip - LIMIT))}
-                disabled={skip === 0}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => goToPage(skip + LIMIT)}
-                disabled={currentPage >= totalPages}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </>
+        </InfiniteScroll>
       )}
     </div>
   );
