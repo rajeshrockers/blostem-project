@@ -7,6 +7,8 @@ A modern, accessible e-commerce storefront built with **React**, **TypeScript**,
 ![Tech Stack](https://img.shields.io/badge/Vite-5.3-purple?logo=vite)
 ![Tech Stack](https://img.shields.io/badge/Tailwind-3.4-cyan?logo=tailwindcss)
 
+**🚀 Live Demo:** [blostem-project.vercel.app](https://blostem-project.vercel.app/)
+
 ## Features
 
 | Feature | Description |
