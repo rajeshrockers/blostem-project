@@ -215,7 +215,7 @@ export default function ProductsPage() {
           endReached={() => hasMore && loadMore()}
           overscan={200}
           listClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8"
-          itemContent={(index, product) => {
+          itemContent={(_index, product) => {
             const isFav = isFavorite(product.id);
             const inCart = isInCart(product.id);
             return (
