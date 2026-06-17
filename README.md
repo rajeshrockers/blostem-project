@@ -148,6 +148,50 @@ VITE_API_BASE_URL=https://dummyjson.com
 
 > Variables prefixed with `VITE_` are exposed to the client bundle.
 
+## Key Decisions & Trade-offs
+
+### Zustand over Context or Redux
+I chose **Zustand** for state management because it provides a minimal, hook-based API with zero boilerplate and built-in TypeScript support. Unlike Redux, it doesn't require actions, reducers, or middleware to achieve persistence — I just wrote a few lines of `localStorage` logic directly in the stores.
+
+### localStorage for Cart & Favorites
+The cart and favorites are persisted to `localStorage` scoped by `userId`. I chose this over an API-backed approach because the DummyJSON API doesn't provide endpoints for user-specific cart/favorite data. In a real app, these would be server-side tables.
+
+### Silent Token Refresh with Axios Interceptors
+Refresh logic lives in the Axios response interceptor rather than a React hook. This keeps token management decoupled from UI components and ensures *all* 401 errors are handled uniformly — including those fired from background data fetches.
+
+### React.lazy Route Splitting
+Each page is wrapped in `React.lazy()`. On a small app the bundle savings are modest, but it enforces a scalable pattern and keeps the initial chunk lean as more pages are added.
+
+### URL-Synced State for Filters
+Search and category filters are reflected in the URL query string (`?q=phone&category=smartphones`). This makes pagination, filtering, and deep-linking shareable and restorable on page refresh.
+
+## Bonus Features Implemented
+
+| Bonus | Status | Notes |
+|-------|--------|-------|
+| **Silent Token Refresh** | ✅ Implemented | Axios interceptor catches 401, queues requests, and swaps the access token via `/auth/refresh` |
+| **URL-Synced State** | ✅ Implemented | `useSearchParams` syncs search + category + pagination to the URL |
+| **Request Cancellation** | ✅ Implemented | `AbortController` in `axiosInstance.ts` allows cancelling in-flight requests |
+| **Cart** | ✅ Implemented | Per-user `localStorage`, quantity controls, order summary, remove items |
+| **Optimistic UI** | ✅ Implemented | Add/remove cart and favorites update instantly; rollback happens automatically via localStorage |
+| **Tests** | ✅ Implemented | Vitest + React Testing Library for `ProtectedRoute` redirect logic |
+| **Accessibility** | ✅ Implemented | Keyboard nav, ARIA labels, visible `focus-visible` rings, skip link, `prefers-color-scheme` default |
+| **Skeleton Loaders** | ✅ Implemented | `SkeletonCard` component used on product grid and favorites |
+| **Performance** | ✅ Implemented | Route-level lazy loading, `React.memo` on pure icons, `useMemo` for cart/favorites calculations |
+| **Form Quality** | ✅ Implemented | React Hook Form + Zod validation with production-grade error messages |
+| **Toasts / Notifications** | ✅ Implemented | Sonner with 1000ms duration for quick, non-intrusive feedback |
+| **Session Expiry UX** | ✅ Implemented | Graceful toast + 1.5s delayed redirect instead of a hard reload |
+
+## What I'd Improve With More Time
+
+- **Error Boundary** — A top-level React error boundary to catch render crashes gracefully.
+- **Image Optimization** — Use `srcset` + lazy-loaded images for the product gallery to reduce LCP.
+- **Infinite Scroll** — Replace pagination with virtualized infinite scroll for smoother browsing.
+- **Server-Side Cart** — Move cart state from `localStorage` to a backend endpoint for multi-device sync.
+- **E2E Testing** — Add Playwright or Cypress tests for the full login → add-to-cart → checkout flow.
+- **PWA Support** — Add a service worker and `manifest.json` for offline browsing.
+- **Rate Limiting UI** — Show a countdown or retry button if the API returns a 429.
+
 ## License
 
 This project is for educational and demonstration purposes.
