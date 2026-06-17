@@ -6,12 +6,13 @@ import axios, {
   InternalAxiosRequestConfig,
 } from 'axios';
 import { toast } from 'sonner';
-import { ENV } from '../config/env';
-import { useAuthStore } from '../store/authStore';
-import { ENDPOINTS } from '../constants/endponint';
+import { ENV } from '../../config/env';
+import { useAuthStore } from '../../store/authStore';
+import { ENDPOINTS } from '../../constants/endponint';
+import { MAGIC_NUMBER } from '../../constants/constants';
 
 const AUTH_TOKEN_KEY = 'token';
-const DEFAULT_TIMEOUT = 30_000;
+const DEFAULT_TIMEOUT = MAGIC_NUMBER.THIRTY_THOUSAND;
 
 // Token helpers
 function getAuthToken(): string | null {
@@ -118,7 +119,7 @@ function handleResponseError(error: AxiosError<unknown>): Promise<never> {
       const loginPath = currentPath === '/login' ? '/login' : `/login?redirect=${encodeURIComponent(currentPath)}`;
       setTimeout(() => {
         window.location.href = loginPath;
-      }, 1500);
+      }, MAGIC_NUMBER.FIFTEEN_HUNDRED);
       (error as AxiosError & { userMessage: string }).userMessage = extractErrorMessage(error);
       return Promise.reject(error);
     }
@@ -159,7 +160,7 @@ function handleResponseError(error: AxiosError<unknown>): Promise<never> {
           const loginPath = currentPath === '/login' ? '/login' : `/login?redirect=${encodeURIComponent(currentPath)}`;
           setTimeout(() => {
             window.location.href = loginPath;
-          }, 1500);
+          }, MAGIC_NUMBER.FIFTEEN_HUNDRED);
           reject(refreshError);
         })
         .finally(() => {

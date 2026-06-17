@@ -1,9 +1,14 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { axiosInstance } from '../../api/axiosInstance';
-import { ENDPOINTS } from '../../constants/endponint';
 import { useCart } from '../../hooks/useCart';
+import { PageContainer } from '../../components/common/PageContainer';
+import { PageHeading } from '../../components/common/PageHeading';
+import { EmptyState } from '../../components/common/EmptyState';
+import { Card } from '../../components/common/Card';
+import { Button } from '../../components/common/Button';
+import { ProductService } from '../../api/services/productService';
+import { MAGIC_NUMBER } from '../../constants/constants';
 import type { Product } from '../../types';
 
 export default function CartPage() {
@@ -19,11 +24,9 @@ export default function CartPage() {
       }
       setLoading(true);
       try {
-        const { data } = await axiosInstance.get<{ products: Product[] }>(
-          `${ENDPOINTS.PRODUCTS.LIST}?limit=0&select=id,title,description,price,thumbnail,category`
-        );
+        const products = await ProductService.fetchAllProducts('id,title,description,price,thumbnail,category');
         const map = new Map<number, Product>();
-        data.products.forEach((p) => map.set(p.id, p));
+        products.forEach((p) => map.set(p.id, p));
         setProducts(map);
       } catch {
         toast.error('Failed to load product details');
@@ -53,12 +56,12 @@ export default function CartPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">Your Cart</h1>
+    <PageContainer>
+      <PageHeading>Your Cart</PageHeading>
 
       {loading ? (
         <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: MAGIC_NUMBER.THREE }).map((_, i) => (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-4 animate-pulse">
               <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2" />
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
@@ -66,24 +69,19 @@ export default function CartPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-gray-600 dark:text-gray-300 mb-4">Your cart is empty.</p>
-          <Link
-            to="/products"
-            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Browse Products
-          </Link>
-        </div>
+        <EmptyState
+          message="Your cart is empty."
+          action={{ label: 'Browse Products', to: '/products' }}
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cart items */}
           <div className="lg:col-span-2 space-y-4">
             {cartLines.map(({ item, product }) =>
               product ? (
-                <div
+                <Card
                   key={item.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex gap-4 items-center"
+                  className="shadow-sm p-4 flex gap-4 items-center"
                 >
                   <Link to={`/products/${item.id}`} className="shrink-0">
                     <img
@@ -134,21 +132,21 @@ export default function CartPage() {
                       Remove
                     </button>
                   </div>
-                </div>
+                </Card>
               ) : (
-                <div
+                <Card
                   key={item.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 text-gray-500 dark:text-gray-400"
+                  className="shadow-sm p-4 text-gray-500 dark:text-gray-400"
                 >
                   Product #{item.id} not found
-                </div>
+                </Card>
               )
             )}
           </div>
 
           {/* Order summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 sticky top-6">
+            <Card className="shadow-sm p-6 sticky top-6">
               <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
                 Order Summary
               </h2>
@@ -160,16 +158,16 @@ export default function CartPage() {
                 <span>Total</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
-              <button
+              <Button
                 onClick={() => toast.success('Checkout coming soon!')}
-                className="w-full mt-6 px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                className="w-full mt-6 px-4 py-3"
               >
                 Checkout
-              </button>
-            </div>
+              </Button>
+            </Card>
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

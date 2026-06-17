@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { axiosInstance } from '../../api/axiosInstance';
-import { ENDPOINTS } from '../../constants/endponint';
-import SkeletonProfile from '../../components/ui/SkeletonProfile';
+import SkeletonProfile from '../../components/Loader/SkeletonProfile';
+import { PageContainer } from '../../components/common/PageContainer';
+import { PageHeading } from '../../components/common/PageHeading';
+import { ErrorState } from '../../components/common/ErrorState';
+import { Card } from '../../components/common/Card';
+import { Button } from '../../components/common/Button';
+import { AuthService } from '../../api/services/authService';
 import type { UserProfile } from '../../types';
 
 // Fetches the current user's profile from /auth/me and shows a logout button.
@@ -18,7 +22,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data } = await axiosInstance.get<UserProfile>(ENDPOINTS.AUTH.ME);
+        const data = await AuthService.getUserProfile();
         setProfile(data);
       } catch {
         setError('Failed to load profile');
@@ -31,29 +35,25 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <PageContainer>
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">Profile</h1>
+          <PageHeading>Profile</PageHeading>
           <SkeletonProfile />
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-red-600">{error}</div>
-      </div>
-    );
+    return <ErrorState message={error} />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <PageContainer>
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">Profile</h1>
+        <PageHeading>Profile</PageHeading>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+        <Card className="p-8">
           {profile && (
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
               <img
@@ -79,7 +79,8 @@ export default function ProfilePage() {
             >
               My Favorites
             </Link>
-            <button
+            <Button
+              variant="danger"
               onClick={() => {
                 if (userId) {
                   localStorage.removeItem(`favorites_user_${userId}`);
@@ -87,13 +88,13 @@ export default function ProfilePage() {
                 clearToken();
                 toast.success('Logged out successfully');
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="rounded-lg"
             >
               Logout
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
-    </div>
+    </PageContainer>
   );
 }

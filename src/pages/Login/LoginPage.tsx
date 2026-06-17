@@ -4,10 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { axiosInstance } from '../../api/axiosInstance';
 import { useAuthStore } from '../../store/authStore';
-import { ENDPOINTS } from '../../constants/endponint';
-import type { LoginResponse } from '../../types';
+import { Button } from '../../components/common/Button';
+import { AuthService } from '../../api/services/authService';
 
 // Zod schema for login form validation.
 const loginSchema = z.object({
@@ -54,10 +53,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { data: response } = await axiosInstance.post<LoginResponse>(ENDPOINTS.AUTH.LOGIN, {
-        username: data.username,
-        password: data.password,
-      });
+      const response = await AuthService.login(data.username, data.password);
       setToken(response.accessToken, response.refreshToken, response.id);
       toast.success('Login successful!');
       navigate(from, { replace: true });
@@ -110,13 +106,9 @@ export default function LoginPage() {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <Button type="submit" disabled={loading} className="w-full py-2">
             {loading ? 'Logging in...' : 'Login'}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-300">

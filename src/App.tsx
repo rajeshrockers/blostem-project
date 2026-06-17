@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import AppRoutes from './routes/AppRoutes';
 import { useThemeStore } from './store/themeStore';
+import { MAGIC_NUMBER } from './constants/constants';
 
 function App() {
   const theme = useThemeStore((state) => state.theme);
@@ -27,7 +28,7 @@ function App() {
       <main id="main-content">
         <AppRoutes />
       </main>
-      <Toaster position="top-right" richColors duration={1000} />
+      <Toaster position="top-right" richColors duration={MAGIC_NUMBER.ONE_THOUSAND} />
     </div>
   );
 }

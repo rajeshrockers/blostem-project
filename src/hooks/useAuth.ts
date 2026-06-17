@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { axiosInstance } from '../api/axiosInstance';
-import { ENDPOINTS } from '../constants/endponint';
+import { AuthService } from '../api/services/authService';
 import type { User } from '../types';
 
 // Validates the stored token by calling /auth/me.
@@ -25,7 +24,7 @@ export function useAuth() {
     // Verify token is still valid with the server.
     const fetchUser = async () => {
       try {
-        const { data } = await axiosInstance.get<User>(ENDPOINTS.AUTH.ME);
+        const data = await AuthService.getCurrentUser();
         setUser(data);
       } catch {
         // Token is invalid or expired — clear it.

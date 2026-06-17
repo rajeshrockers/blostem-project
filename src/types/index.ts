@@ -49,3 +49,58 @@ export interface CartItem {
   id: number;
   quantity: number;
 }
+
+export interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+export interface HeartIconProps {
+  filled: boolean;
+  className?: string;
+}
+
+export interface ImageGalleryProps {
+  images: string[];
+  thumbnail: string;
+  title: string;
+}
+
+export interface ProductInfoProps {
+  product: ProductDetail;
+}
+
+export interface PageContainerProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface PageHeadingProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface ErrorStateProps {
+  message: string;
+}
+
+export interface EmptyStateAction {
+  label: string;
+  to: string;
+}
+
+export interface EmptyStateProps {
+  message: string;
+  action?: EmptyStateAction;
+}
+
+export interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export type ButtonVariant = 'primary' | 'danger' | 'outline';
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  children: React.ReactNode;
+}

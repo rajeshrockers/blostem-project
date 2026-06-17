@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
-import ProtectedRoute from '../components/auth/ProtectedRoute';
+import ProtectedRoute from './ProtectedRoute';
+import PublicRoute from './PublicRoute';
 
 const ProductsPage = lazy(() => import('../pages/Products/ProductsPage'));
 const ProductDetailPage = lazy(() => import('../pages/ProductDetail/ProductDetailPage'));
@@ -25,9 +26,23 @@ export default function AppRoutes() {
       <Navbar />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<ProductsPage />} />
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <ProductsPage />
+              </PublicRoute>
+            }
+          />
           <Route path="/products/:id" element={<ProductDetailPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
           <Route
             path="/favorites"
             element={

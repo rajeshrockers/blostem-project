@@ -1,10 +1,14 @@
 import { useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
-import { axiosInstance } from '../../api/axiosInstance';
-import { ENDPOINTS } from '../../constants/endponint';
 import { useFavorites } from '../../hooks/useFavorites';
-import SkeletonCard from '../../components/ui/SkeletonCard';
+import SkeletonCard from '../../components/Loader/SkeletonCard';
+import { PageContainer } from '../../components/common/PageContainer';
+import { PageHeading } from '../../components/common/PageHeading';
+import { ErrorState } from '../../components/common/ErrorState';
+import { EmptyState } from '../../components/common/EmptyState';
+import { Card } from '../../components/common/Card';
+import { ProductService } from '../../api/services/productService';
+import { MAGIC_NUMBER } from '../../constants/constants';
 import type { Product } from '../../types';
 
 // Displays products the user has favorited (stored in localStorage, scoped by user).
@@ -20,8 +24,8 @@ export default function FavoritesPage() {
       setLoading(true);
       setError('');
       try {
-        const { data } = await axiosInstance.get<{ products: Product[] }>(`${ENDPOINTS.PRODUCTS.LIST}?limit=0`);
-        setProducts(data.products);
+        const products = await ProductService.fetchAllProducts();
+        setProducts(products);
       } catch {
         setError('Failed to load favorites');
       } finally {
@@ -38,40 +42,34 @@ export default function FavoritesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Your Favorites</h1>
+      <PageContainer>
+        <PageHeading className="mb-8">Your Favorites</PageHeading>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
+          {Array.from({ length: MAGIC_NUMBER.EIGHT }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-red-600">{error}</div>
-      </div>
-    );
+    return <ErrorState message={error} />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Your Favorites</h1>
+    <PageContainer>
+      <PageHeading className="mb-8">Your Favorites</PageHeading>
 
       {favoriteProducts.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-gray-600 dark:text-gray-300 text-lg mb-4">No favorites yet.</p>
-          <Link to="/" className="text-blue-600 hover:underline">
-            Browse products
-          </Link>
-        </div>
+        <EmptyState
+          message="No favorites yet."
+          action={{ label: 'Browse products', to: '/' }}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {favoriteProducts.map((product) => (
-            <div key={product.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <img
                 src={product.thumbnail}
                 alt={product.title}
@@ -93,10 +91,10 @@ export default function FavoritesPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

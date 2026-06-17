@@ -1,112 +1,19 @@
-import { useEffect, useState, useCallback, useRef, useMemo, memo } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
-import { toast } from 'sonner';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { VirtuosoGrid } from 'react-virtuoso';
-import { axiosInstance } from '../../api/axiosInstance';
-import { ENDPOINTS } from '../../constants/endponint';
 import { useDebounce } from '../../hooks/useDebounce';
-import SkeletonCard from '../../components/ui/SkeletonCard';
-import { useFavorites } from '../../hooks/useFavorites';
-import { useCart } from '../../hooks/useCart';
-import { useAuth } from '../../hooks/useAuth';
-import type { CategoryItem, Product, ProductsResponse } from '../../types';
+import { ProductService } from '../../api/services/productService';
+import SkeletonCard from '../../components/Loader/SkeletonCard';
+import { ProductCard } from '../../components/product/ProductCard';
+import { PageContainer } from '../../components/common/PageContainer';
+import { PageHeading } from '../../components/common/PageHeading';
+import { ErrorState } from '../../components/common/ErrorState';
+import { EmptyState } from '../../components/common/EmptyState';
+import { MAGIC_NUMBER } from '../../constants/constants';
+import type { CategoryItem, Product } from '../../types';
 
-const LIMIT = 20;
-
-// Heart icon SVG component (memoized — props are stable, avoids re-renders).
-const HeartIcon = memo(function HeartIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill={filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth={2}
-      className="w-5 h-5"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-      />
-    </svg>
-  );
-});
-
-// Product card rendered inside VirtuosoGrid — subscribes to stores directly
-// so the parent doesn't re-render (and recreate itemContent) on store changes.
-const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
-  const { toggle, isFavorite } = useFavorites();
-  const { add, remove, isInCart } = useCart();
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const fav = isFavorite(product.id);
-  const inCart = isInCart(product.id);
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative h-full flex flex-col">
-      <Link to={`/products/${product.id}`} className="block flex-1">
-        <img
-          src={product.thumbnail}
-          alt={product.title}
-          className="w-full h-48 object-cover"
-        />
-        <div className="p-4 pb-14 flex flex-col">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-2 line-clamp-1">{product.title}</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 flex-1">{product.description}</p>
-          <div className="flex items-center justify-between">
-            <span className="text-xl font-bold text-blue-600">${product.price}</span>
-            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded-full">
-              {product.category}
-            </span>
-          </div>
-        </div>
-      </Link>
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const added = toggle(product.id);
-          toast.success(added ? 'Added to favorites' : 'Removed from favorites');
-        }}
-        className={`absolute top-3 right-3 p-2 rounded-full shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
-          fav
-            ? 'text-red-500 bg-white dark:bg-gray-800 hover:bg-red-50'
-            : 'text-gray-400 bg-white dark:bg-gray-800 hover:text-red-500 hover:bg-red-50'
-        }`}
-        aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
-      >
-        <HeartIcon filled={fav} />
-      </button>
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!isAuthenticated) {
-            toast.error('Please log in first');
-            setTimeout(() => navigate('/login'), 1000);
-            return;
-          }
-          if (inCart) {
-            remove(product.id);
-            toast.success('Removed from cart');
-          } else {
-            add(product.id);
-            toast.success('Added to cart');
-          }
-        }}
-        className={`absolute bottom-3 right-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-          inCart
-            ? 'bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500'
-            : 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500'
-        }`}
-      >
-        {inCart ? 'Remove from Cart' : 'Add to Cart'}
-      </button>
-    </div>
-  );
-});
+const LIMIT = MAGIC_NUMBER.TWENTY;
 
 // Product list with debounced search, category filter, and pagination.
 export default function ProductsPage() {
@@ -129,7 +36,7 @@ export default function ProductsPage() {
         if (loadingMore) {
           return (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: MAGIC_NUMBER.EIGHT }).map((_, i) => (
                 <SkeletonCard key={`loading-${i}`} />
               ))}
             </div>
@@ -153,7 +60,7 @@ export default function ProductsPage() {
 
   // Local input state for the search field (pre-debounce).
   const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
-  const debouncedSearch = useDebounce(searchInput, 400);
+  const debouncedSearch = useDebounce(searchInput, MAGIC_NUMBER.FOUR_HUNDRED);
 
   const category = searchParams.get('category') || '';
   const skip = (page - 1) * LIMIT;
@@ -163,7 +70,7 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const { data } = await axiosInstance.get<CategoryItem[]>(ENDPOINTS.PRODUCTS.CATEGORIES);
+        const data = await ProductService.fetchCategories();
         setCategories(data);
       } catch {
         // silently ignore — categories are optional
@@ -180,15 +87,13 @@ export default function ProductsPage() {
     }
     setError('');
     try {
-      let url: string;
-      if (category) {
-        url = `${ENDPOINTS.PRODUCTS.BY_CATEGORY(category)}?limit=${LIMIT}&skip=${skip}`;
-      } else if (debouncedSearch) {
-        url = `${ENDPOINTS.PRODUCTS.SEARCH}?q=${encodeURIComponent(debouncedSearch)}&limit=${LIMIT}&skip=${skip}`;
-      } else {
-        url = `${ENDPOINTS.PRODUCTS.LIST}?limit=${LIMIT}&skip=${skip}`;
-      }
-      const { data } = await axiosInstance.get<ProductsResponse>(url, { signal });
+      const data = await ProductService.fetchProducts({
+        limit: LIMIT,
+        skip,
+        category,
+        search: debouncedSearch,
+        signal,
+      });
       if (signal?.aborted) return; // race: newer request already started
       let updatedCount = 0;
       setProducts((prev) => {
@@ -269,8 +174,8 @@ export default function ProductsPage() {
   }, [loading, loadingMore]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">Product List</h1>
+    <PageContainer>
+      <PageHeading>Product List</PageHeading>
 
       {/* Search and filter bar */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -302,11 +207,9 @@ export default function ProductsPage() {
           ))}
         </div>
       ) : error ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-lg text-red-600">{error}</div>
-        </div>
+        <ErrorState message={error} />
       ) : products.length === 0 ? (
-        <div className="text-center py-20 text-gray-600 dark:text-gray-300">No products found.</div>
+        <EmptyState message="No products found." />
       ) : (
         <VirtuosoGrid
           useWindowScroll
@@ -319,6 +222,6 @@ export default function ProductsPage() {
           components={virtuosoComponents}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

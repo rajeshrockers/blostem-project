@@ -1,9 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
+import { useAuth } from '../hooks/useAuth';
+import { ProtectedRouteProps } from '../types';
 
 // Route guard: shows a loader while validating the token,
 // then either renders the children or redirects to /login.
