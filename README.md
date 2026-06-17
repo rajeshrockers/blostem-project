@@ -92,22 +92,30 @@ npm test
 
 ```
 src/
-├── api/               # Axios instance with interceptors
-├── components/        # Reusable UI components (Navbar, SkeletonCard, ProtectedRoute)
-├── config/            # Environment variables
-├── constants/         # API endpoint definitions
-├── hooks/             # Custom hooks (useAuth, useCart, useFavorites, useTheme)
-├── pages/             # Route-level page components
+├── api/
+│   ├── interceptors/    # Axios instance with request/response interceptors
+│   └── services/        # API service classes (AuthService, ProductService)
+├── components/
+│   ├── common/          # Shared UI components (Button, Card, EmptyState, etc.)
+│   ├── icons/           # SVG icons (HeartIcon, SunIcon, MoonIcon, CartIcon)
+│   ├── layout/          # Navbar
+│   ├── Loader/          # Skeleton loaders (SkeletonCard, SkeletonProfile, etc.)
+│   └── product/         # Product-specific components (ProductCard, ImageGallery, ProductInfo)
+├── config/              # Environment variable config
+├── constants/           # Constants (ENDPOINTS, MAGIC_NUMBER)
+├── hooks/               # Custom hooks (useAuth, useCart, useDebounce, useFavorites, useTheme)
+├── pages/               # Route-level page components
 │   ├── Cart/
 │   ├── Favorites/
 │   ├── Login/
 │   ├── ProductDetail/
 │   ├── Products/
 │   └── Profile/
-├── routes/            # AppRoutes with lazy-loaded pages
-├── store/             # Zustand stores (auth, cart, theme)
-├── test/              # Test setup files
-└── App.tsx            # Root component with theme sync & skip link
+├── routes/              # AppRoutes, ProtectedRoute, PublicRoute
+├── store/               # Zustand stores (auth, cart, theme)
+├── test/                # Test setup & component tests
+├── types/               # Centralized TypeScript interfaces
+└── App.tsx              # Root component with theme sync & skip link
 ```
 
 ## Default Login Credentials
@@ -167,13 +175,22 @@ Each page is wrapped in `React.lazy()`. On a small app the bundle savings are mo
 ### URL-Synced State for Filters
 Search and category filters are reflected in the URL query string (`?q=phone&category=smartphones`). This makes pagination, filtering, and deep-linking shareable and restorable on page refresh.
 
+### Service Classes for API Calls
+All HTTP requests are centralized in `AuthService` and `ProductService` under `api/services/`. Pages and hooks import these classes rather than calling `axiosInstance` directly. This makes the API layer testable, reusable, and easy to swap if the backend changes.
+
+### Shared UI Components in `components/common/`
+Repeated UI patterns — `PageContainer`, `PageHeading`, `EmptyState`, `ErrorState`, `Card`, `Button` — are extracted into a shared `common/` folder. Every page uses these instead of duplicating Tailwind class strings, keeping the codebase DRY and consistent.
+
+### `MAGIC_NUMBER` Constants
+All inline numeric literals (pagination limits, debounce delays, skeleton counts, timeouts) are extracted to a single `MAGIC_NUMBER` object in `constants.ts`. This makes the app self-documenting and trivial to tune without hunting through files.
+
 ## Bonus Features Implemented
 
 | Bonus | Status | Notes |
 |-------|--------|-------|
 | **Silent Token Refresh** | ✅ Implemented | Axios interceptor catches 401, queues requests, and swaps the access token via `/auth/refresh` |
 | **URL-Synced State** | ✅ Implemented | `useSearchParams` syncs search + category + pagination to the URL |
-| **Request Cancellation** | ✅ Implemented | `AbortController` in `axiosInstance.ts` allows cancelling in-flight requests |
+| **Request Cancellation** | ✅ Implemented | `AbortController` in `ProductsPage` cancels in-flight requests on new filter/page changes |
 | **Cart** | ✅ Implemented | Per-user `localStorage`, quantity controls, order summary, remove items |
 | **Optimistic UI** | ✅ Implemented | Add/remove cart and favorites update instantly; rollback happens automatically via localStorage |
 | **Tests** | ✅ Implemented | Vitest + React Testing Library for `ProtectedRoute` redirect logic |
@@ -181,14 +198,16 @@ Search and category filters are reflected in the URL query string (`?q=phone&cat
 | **Skeleton Loaders** | ✅ Implemented | `SkeletonCard` component used on product grid and favorites |
 | **Performance** | ✅ Implemented | Route-level lazy loading, `React.memo` on pure icons, `useMemo` for cart/favorites calculations |
 | **Form Quality** | ✅ Implemented | React Hook Form + Zod validation with production-grade error messages |
-| **Toasts / Notifications** | ✅ Implemented | Sonner with 1000ms duration for quick, non-intrusive feedback |
-| **Session Expiry UX** | ✅ Implemented | Graceful toast + 1.5s delayed redirect instead of a hard reload |
+| **Toasts / Notifications** | ✅ Implemented | Sonner with `MAGIC_NUMBER.ONE_THOUSAND` duration for quick, non-intrusive feedback |
+| **Session Expiry UX** | ✅ Implemented | Graceful toast + `MAGIC_NUMBER.FIFTEEN_HUNDRED` delayed redirect instead of a hard reload |
+| **Magic Number Constants** | ✅ Implemented | All numeric literals extracted to `MAGIC_NUMBER` constants in `constants.ts` |
+| **API Services** | ✅ Implemented | `AuthService` and `ProductService` classes centralize all API calls |
+| **PublicRoute Guard** | ✅ Implemented | Authenticated users are redirected away from public-only pages like `/login` |
 
 ## What I'd Improve With More Time
 
 - **Error Boundary** — A top-level React error boundary to catch render crashes gracefully.
 - **Image Optimization** — Use `srcset` + lazy-loaded images for the product gallery to reduce LCP.
-- **Infinite Scroll** — Replace pagination with virtualized infinite scroll for smoother browsing.
 - **Server-Side Cart** — Move cart state from `localStorage` to a backend endpoint for multi-device sync.
 - **E2E Testing** — Add Playwright or Cypress tests for the full login → add-to-cart → checkout flow.
 - **PWA Support** — Add a service worker and `manifest.json` for offline browsing.
