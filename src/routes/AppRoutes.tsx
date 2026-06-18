@@ -26,14 +26,7 @@ export default function AppRoutes() {
       <Navbar />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route
-            path="/"
-            element={
-              <PublicRoute>
-                <ProductsPage />
-              </PublicRoute>
-            }
-          />
+          <Route path="/" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route
             path="/login"

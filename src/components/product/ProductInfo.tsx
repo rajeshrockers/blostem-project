@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { HeartIcon } from '../icons/HeartIcon';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useCart } from '../../hooks/useCart';
@@ -12,6 +12,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const { add, remove, isInCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const discountedPrice = product.price * (1 - product.discountPercentage / 100);
   const isFav = isFavorite(product.id);
@@ -29,7 +30,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           onClick={() => {
             if (!isAuthenticated) {
               toast.error('Please log in first');
-              setTimeout(() => navigate('/login'), MAGIC_NUMBER.ONE_THOUSAND);
+              setTimeout(() => navigate('/login', { state: { from: location } }), MAGIC_NUMBER.ONE_THOUSAND);
               return;
             }
             const added = toggle(product.id);
@@ -74,7 +75,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           onClick={() => {
             if (!isAuthenticated) {
               toast.error('Please log in first');
-              setTimeout(() => navigate('/login'), MAGIC_NUMBER.ONE_THOUSAND);
+              setTimeout(() => navigate('/login', { state: { from: location } }), MAGIC_NUMBER.ONE_THOUSAND);
               return;
             }
             if (inCart) {

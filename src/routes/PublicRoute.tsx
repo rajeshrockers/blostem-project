@@ -1,10 +1,13 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ProtectedRouteProps } from '../types';
 
 // Route guard: redirects authenticated users away from public-only pages (e.g. login).
+// Preserves location.state.from so post-login redirect lands on the originally requested page.
 export default function PublicRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/';
 
   if (loading) {
     return (
@@ -15,7 +18,7 @@ export default function PublicRoute({ children }: ProtectedRouteProps) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={from} replace />;
   }
 
   return <>{children}</>;
